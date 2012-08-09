@@ -1,15 +1,15 @@
 # quil-playground
 
-I'm an app. Or maybe I'm a library? I haven't decided yet. 
+This is my scratchpad for quil ideas.
 
-The choice is up to you!
+Mainly it's a Leiningen project and a loose pile of files to test ideas.
+
 
 ## Usage
 
-FIXME
+Fire up a repl and start evaluating forms out of the files.
 
 ## License
 
-Copyright © 2012 FIXME
+Copyright © 2012 Nathan Stien
 
-Distributed under the Eclipse Public License, the same as Clojure.
