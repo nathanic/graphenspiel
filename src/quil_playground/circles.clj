@@ -22,6 +22,7 @@
 ; window dimensions
 (def cx 400)
 (def cy 400)
+(def node-radius 50)
 
 (defrecord Node
   [pos
@@ -58,29 +59,29 @@
 (defn draw-blip
   [blip]
   (let [[x y] (blip-pos blip)]
-    #_(println "drawing a blip at " x y)
+    (println "drawing a blip at " x y)
     (no-stroke)
     #_(fill 250 200 30)
     (fill 0 200 30)
     (ellipse x y 10 10)))
+
+
+(defn draw-node
+  [node]
+  (let [[x y] (:pos node)]
+    (fill 128 128 255)
+    (stroke 0 0 0) 
+    (ellipse x y node-radius node-radius)))
+
 
 (defn draw []
   ; edge
   (stroke 128 128 128)
   (line 100 100 300 300)
 
-  ; nodes
-  (fill 128 128 255)
-  (stroke 0 0 0) 
-  (ellipse 100 100 50 50)
-  (ellipse 300 300 50 50)
-
-  ; blip
-  (let [n1   (Node. [100 100]) 
-        n2   (Node. [300 300]) 
-        blip (Blip. n1 n2 50)] 
-    (draw-blip blip))
-  )
+  (doall (map draw-node @(state :nodes)))
+  (doall (map draw-blip @(state :blips)))
+)
 ; how do i stop it from leaving residual artifacts from the blips?
 
 (defn setup []
@@ -93,8 +94,8 @@
   (let [n1   (Node. [100 100]) 
         n2   (Node. [300 300]) 
         blip (Blip. n1 n2 200)] 
-    (set-state! {:nodes (atom [n1 n2]) 
-                 :blips (atom [blip])})
+    (set-state! :nodes (atom [n1 n2]) 
+                :blips (atom [blip]))
     ))
 
 (defsketch simple-circle
