@@ -22,7 +22,8 @@
 ; window dimensions
 (def cx 400)
 (def cy 400)
-(def node-radius 50)
+
+(def node-radius 40)
 
 (defrecord Node
   [pos
@@ -59,7 +60,7 @@
 (defn draw-blip
   [blip]
   (let [[x y] (blip-pos blip)]
-    (println "drawing a blip at " x y)
+    #_(println "drawing a blip at " x y)
     (no-stroke)
     #_(fill 250 200 30)
     (fill 0 200 30)
@@ -74,15 +75,50 @@
     (ellipse x y node-radius node-radius)))
 
 
-(defn draw []
-  ; edge
-  (stroke 128 128 128)
-  (line 100 100 300 300)
+; TODO: something less lame than (first (sort pts))
+; min doesn't directly work on vectors...
+(defn all-edges [nodes]
+  (set (map (fn [n] 
+              (sort [(:pos (:origin n)) 
+                     (:pos (:dest n))])) 
+            nodes)))
 
+(defn draw-edges [blips]
+  (stroke 128 128 128)
+  (doseq [[[x0 y0] 
+           [x1 y1]] (all-edges blips)]
+    #_(println "drawing edge" x0 y0 x1 y1)
+    (line x0 y0 x1 y1)))
+
+(defn draw []
+  (draw-edges @(state :blips))
   (doall (map draw-node @(state :nodes)))
   (doall (map draw-blip @(state :blips)))
 )
 ; how do i stop it from leaving residual artifacts from the blips?
+
+
+; arguments to set-state!, defined here to make things
+; easer for interactive eval
+(def initial-state
+  (let [n1 (Node. [100 100]) 
+        n2 (Node. [300 300]) 
+        n3 (Node. [125 250]) 
+        b1 (Blip. n1 n2 200) ; blips are complected with edges
+        b2 (Blip. n1 n3 50)
+        b3 (Blip. n2 n3 100) ] 
+    [:nodes (atom [n1 n2 n3]) 
+     :blips (atom [b1 b2 b3])]
+    ))
+
+(comment
+  (def nodes (:nodes (apply hash-map initial-state)))
+  (def blips (:blips (apply hash-map initial-state)))
+  (prn @nodes)
+  (prn @blips)
+  (count (all-edges @blips))
+  (doseq [q  (all-edges @blips)] (println "q:" q))
+  )
 
 (defn setup []
   (frame-rate 24)
@@ -91,19 +127,18 @@
   (stroke 0)
   (stroke-weight 5)
   (fill 255 25)
-  (let [n1   (Node. [100 100]) 
-        n2   (Node. [300 300]) 
-        blip (Blip. n1 n2 200)] 
-    (set-state! :nodes (atom [n1 n2]) 
-                :blips (atom [blip]))
-    ))
+  (apply set-state! initial-state)
+  )
 
-(defsketch simple-circle
-  :title "circles and stuff"
+(comment
+(defsketch some-nodes 
+  :title "graphs and stuff"
   :setup setup
   :draw draw
   :size [cx cy]
   :keep-on-top true)
+  
+)
 
 
 (comment
