@@ -1,6 +1,8 @@
 (ns circles 
   (:use quil.core
-        [quil.helpers.seqs :only [seq->stream range-incl]]))
+        [quil.helpers.seqs :only [seq->stream range-incl]])
+  (:import java.lang.Thread)
+  )
 
 ; the eventual goal is to make something like nodebeat
 ; that is, a graph of sundry nodes that generate music.
@@ -141,6 +143,7 @@
     (line x0 y0 x1 y1)))
 
 (defn draw []
+  (background 180)
   (draw-edges @(state :blips))
   (doall (map draw-node @(state :nodes)))
   (doall (map draw-blip @(state :blips)))
@@ -186,18 +189,37 @@
   (use 'clojure.repl)
   (use 'clojure.pprint)
 
+  (defn update-blip-pos [blip]
+    (let [dist (node-dist (:origin blip) (:dest blip))] 
+      (cond
+        ; reset to zero if we hit the limit
+        (>= (:pos blip) dist)
+        (update-in blip [:pos] (constantly 0))
+
+        :otherwise
+        (update-in blip [:pos] inc)
+        )))
+
+  ; state calculation should be a pure function
   (defn calc-next-state 
     [nodes blips]
-    [nodes (map #(update-in % [:pos] inc) blips)] 
+    [nodes (map update-blip-pos blips)] 
     )
   (calc-next-state [] [(Blip. nil nil 1)])
 
   (pprint initial-state)
-  (let [[n' b'] (calc-next-state @(:nodes initial-state) 
-                                 @(:blips initial-state))]
-    (reset! (:nodes initial-state) n')
-    (reset! (:blips initial-state) b')
-    )
+
+  ; let's just try a shitty little update loop in the REPL thread
+  ; animate the blips
+  (loop []
+    (let [[n' b'] (calc-next-state @(:nodes initial-state) 
+                                   @(:blips initial-state))]
+      (reset! (:nodes initial-state) n')
+      (reset! (:blips initial-state) b')
+      (Thread/sleep 100)
+      (recur)))
+
+  ; TODO: fire off a thread to keep messing with the state
 
 (defsketch some-nodes 
   :title "graphs and stuff"
@@ -206,7 +228,7 @@
   :size [cx cy]
   :keep-on-top true)
   
-)
+comment)
 
 
 (comment
