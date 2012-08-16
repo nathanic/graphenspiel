@@ -189,6 +189,7 @@
   (use 'clojure.repl)
   (use 'clojure.pprint)
 
+  (def pos-increment 5)
   (defn update-blip-pos [blip]
     (let [dist (node-dist (:origin blip) (:dest blip))] 
       (cond
@@ -197,7 +198,7 @@
         (update-in blip [:pos] (constantly 0))
 
         :otherwise
-        (update-in blip [:pos] inc)
+        (update-in blip [:pos] + pos-increment)
         )))
 
   ; state calculation should be a pure function
@@ -209,15 +210,15 @@
 
   (pprint initial-state)
 
-  ; let's just try a shitty little update loop in the REPL thread
-  ; animate the blips
-  (loop []
+  ; let's just try a shitty little update loop to animate the blips
+  (def f (future (loop []
     (let [[n' b'] (calc-next-state @(:nodes initial-state) 
                                    @(:blips initial-state))]
       (reset! (:nodes initial-state) n')
       (reset! (:blips initial-state) b')
-      (Thread/sleep 100)
-      (recur)))
+      (Thread/sleep 50)
+      (recur)))))
+  (future-cancel f)
 
   ; TODO: fire off a thread to keep messing with the state
 
