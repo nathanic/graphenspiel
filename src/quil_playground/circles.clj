@@ -5,21 +5,7 @@
   )
 
 ; the eventual goal is to make something like nodebeat
-; that is, a graph of sundry nodes that generate music.
-; steps:
-  ; draw a circle
-    ; check
-  ; draw two circles with a line between them
-    ; check
-  ; draw some kind of blip along the line
-    ; check
-  ; parameterize that shit
-    ; use the state stuff
-    ; check
-  ; iterate that shit
-    ; update the state in some reasonable way
-  ; implement node creation
-    ; probably just click to create nodes to start out 
+; that is, a graph of sundry nodes that generate musical sounds.
 
 
 ; window dimensions
@@ -184,43 +170,58 @@
   (apply set-state! (apply concat initial-state))
   )
 
-(comment
 
-  (use 'clojure.repl)
-  (use 'clojure.pprint)
 
-  (def pos-increment 5)
-  (defn update-blip-pos [blip]
-    (let [dist (node-dist (:origin blip) (:dest blip))] 
-      (cond
-        ; reset to zero if we hit the limit
-        (>= (:pos blip) dist)
-        (update-in blip [:pos] (constantly 0))
+(comment ; code incubator
 
-        :otherwise
-        (update-in blip [:pos] + pos-increment)
-        )))
+  (do  
+    (use 'clojure.repl)
+    (use 'clojure.pprint)
 
-  ; state calculation should be a pure function
-  (defn calc-next-state 
-    [nodes blips]
-    [nodes (map update-blip-pos blips)] 
-    )
-  (calc-next-state [] [(Blip. nil nil 1)])
+    (def pos-increment 5)
+    (defn update-blip-pos [blip]
+      (let [dist (node-dist (:origin blip) (:dest blip))] 
+        (cond
+          ; reset to zero if we hit the limit
+          (>= (:pos blip) dist)
+          (update-in blip [:pos] (constantly 0))
+          ; todo: trigger some kind of event handler based on origin & dest types
+
+          :otherwise
+          (update-in blip [:pos] + pos-increment)
+          )))
+
+    ; state calculation should be a pure function
+    ; i'm also tempted to just keep the state as one value
+    ; in a single atom
+    (defn calc-next-state 
+      [nodes blips]
+      [nodes 
+      (map update-blip-pos blips)]) 
+    
+  )
 
   (pprint initial-state)
 
   ; let's just try a shitty little update loop to animate the blips
-  (def f (future (loop []
-    (let [[n' b'] (calc-next-state @(:nodes initial-state) 
-                                   @(:blips initial-state))]
-      (reset! (:nodes initial-state) n')
-      (reset! (:blips initial-state) b')
-      (Thread/sleep 50)
-      (recur)))))
-  (future-cancel f)
+  ; should eventually have this kicked off by (setup)
+  ; need to stash it in state
+  ; hopefully there is some kind of teardown event...
+  ; otherwise i need to make arrange for it to stop some other way
+  (def animation-thread 
+    (future              
+      (loop []
+        (let [[n' b'] (calc-next-state @(:nodes initial-state) 
+                                       @(:blips initial-state))]
+          (reset! (:nodes initial-state) n')
+          (reset! (:blips initial-state) b')
+          (Thread/sleep 50)
+          (recur)))))
+  ; this is an abuse of futures but damn handy
+  (future-cancel animation-thread)
 
-  ; TODO: fire off a thread to keep messing with the state
+  ; consider https://github.com/overtone/at-at/ for this
+
 
 (defsketch some-nodes 
   :title "graphs and stuff"
