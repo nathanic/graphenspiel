@@ -59,18 +59,41 @@
 
   it's funny that i'm reaching for OO
   but OO has always been good for simulation
+
+  
+  does processing/quil offer me enough UI stuff?
+  should i be doing this with seesaw instead?
+  
+  TODO
+    differentiate node types
+      octave source
+      percussion source
+      various sink types
+        synths
+        samplers
+          load arbitrary files
+        percussion
+          evaluate synths and samples for these
+      pulse rate modifiers
+    animate nodes in response to pulses
+    play sounds in response to pulses
+    create nodes with mouse
+    drag/drop nodes
+    node motion
+
 )
 
 
 (defrecord Node
   [pos
    ;sinks  ; list of Nodes connected as sinks
+           ; what about a list of connected Edges?
    ;color
    ;rate   ; rate of pulses in Hz
    ;kind
    ]
   )
-
+; maybe Edges are separate from blips
 (defrecord Blip 
   [origin  ; origin node
    dest    ; destination node
@@ -130,6 +153,8 @@
 
 (defn draw []
   (background 180)
+  (stroke 0)
+  (stroke-weight 5)
   (draw-edges @(state :blips))
   (doall (map draw-node @(state :nodes)))
   (doall (map draw-blip @(state :blips)))
@@ -143,11 +168,15 @@
   (let [n1 (Node. [100 100]) 
         n2 (Node. [300 300]) 
         n3 (Node. [125 250]) 
+        n4 (Node. [220 350]) 
         b1 (Blip. n1 n2 200) ; blips are complected with edges
         b2 (Blip. n1 n3 50)
-        b3 (Blip. n2 n3 100) ] 
-    {:nodes (atom [n1 n2 n3]) 
-     :blips (atom [b1 b2 b3])}
+        b3 (Blip. n3 n2 100)
+        b4 (Blip. n3 n4 10)  
+        b5 (Blip. n2 n4 10)  
+        ] 
+    {:nodes (atom [n1 n2 n3 n4]) 
+     :blips (atom [b1 b2 b3 b4 b5])}
     ))
 
 
@@ -200,6 +229,13 @@
       (map update-blip-pos blips)]) 
     
   )
+
+  ; should i use defmulti to set up behaviors?
+  ; or records & a protocol?
+  ; i guess i already have records above...
+  ; but i could probably still use defmulti in conjunction 
+  (defmulti react-to-hit ...)
+  (defmethod react-to-hit :Node ...)
 
   (pprint initial-state)
 
