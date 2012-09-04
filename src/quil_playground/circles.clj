@@ -1,8 +1,7 @@
 (ns circles 
   (:use quil.core
         [quil.helpers.seqs :only [seq->stream range-incl]])
-  (:import java.lang.Thread)
-  )
+  (:import java.lang.Thread))
 
 ; the eventual goal is to make something like nodebeat
 ; that is, a graph of sundry nodes that generate musical sounds.
@@ -83,12 +82,12 @@
 
 
 
-graph resources
-  http://inclojurewetrust.blogspot.com/2009/10/dijkstra-in-clojure.html
-  https://github.com/jkk/loom
-  https://github.com/pallix/lacij
-  http://jkkramer.wordpress.com/2010/08/27/fun-with-clojure%C2%A0turning-cats-into-dogs-in-hanoi/
-  http://clj-me.cgrand.net/2010/01/16/graph-structured-stacks-in-clojure/
+   ;graph resources
+   ;  http://inclojurewetrust.blogspot.com/2009/10/dijkstra-in-clojure.html
+   ;  https://github.com/jkk/loom
+   ;  https://github.com/pallix/lacij
+   ;  http://jkkramer.wordpress.com/2010/08/27/fun-with-clojure%C2%A0turning-cats-into-dogs-in-hanoi/
+   ;  http://clj-me.cgrand.net/2010/01/16/graph-structured-stacks-in-clojure/
 )
 
 
@@ -170,6 +169,7 @@ graph resources
            [x1 y1]] (all-edges blips)]
     #_(println "drawing edge" x0 y0 x1 y1)
     (line x0 y0 x1 y1)))
+
 
 (defn draw []
   (background 180)
@@ -324,7 +324,6 @@ comment)
 ; at a specific bookmark
 ; :nnoremap <f11> 'e,e
 
-
 (comment
   ; this comment is for figuring out multimethods
 
@@ -465,7 +464,7 @@ comment)
       ; maybe the state should be a transactional ref
       ; we could then alter it
     (swap! the-state
-           (fn [{:keys nodes edges} :as st]
+           (fn [{:keys [nodes edges]} :as st]
              ((assoc-in st [:edges]))
              )
            )
@@ -492,7 +491,8 @@ comment)
   ; maybe instead of (now), a dynamic binding *tick*
   ; that we could update per tick... that way time stays consistent
   ; during all update functions, and we can test time-based effects
-  ; easily...
+  ; easily.
+  ; however... bindings are thread-local, which could be a problem.
   (def ^:dynamic *tick*)
   
   (defn fanout [& fns]
@@ -523,9 +523,10 @@ comment)
   (defn handle-tick 
     [state]
     (let [state          (remove expired? state)
-          current-events (filter currently? (:events state))] 
+          current-events (filter current? (:events state))] 
       ; do i need a dorun or something/
       (reduce handle-event state current-events)))
   
   ; handle-event is a multimethod
     comment)
+
