@@ -81,18 +81,29 @@
     drag/drop nodes
     node motion
 
+
+
+graph resources
+  http://inclojurewetrust.blogspot.com/2009/10/dijkstra-in-clojure.html
+  https://github.com/jkk/loom
+  https://github.com/pallix/lacij
+  http://jkkramer.wordpress.com/2010/08/27/fun-with-clojure%C2%A0turning-cats-into-dogs-in-hanoi/
+  http://clj-me.cgrand.net/2010/01/16/graph-structured-stacks-in-clojure/
 )
 
 
 (defrecord Node
   [pos
    ;sinks  ; list of Nodes connected as sinks
-           ; what about a list of connected Edges?
+          ; what about a list of connected Edges?
+   ;blips  ; list of 
    ;color
    ;rate   ; rate of pulses in Hz
    ;kind
    ]
   )
+
+
 ; maybe Edges are separate from blips
 (defrecord Blip 
   [origin  ; origin node
@@ -107,6 +118,15 @@
         [x2 y2] (:pos n2)] 
     (sqrt (+ (pow (- x2 x1) 2)
              (pow (- y2 y1) 2)))))
+
+
+(defrecord Edge
+  [^Node origin
+   ^Node dest 
+         blips   ; list of scalar positions along this Edge
+   ]
+  #_(length []
+    (node-dist origin dest)))
 
 ; linear interpolation
 (defn blip-pos
@@ -297,8 +317,215 @@ comment)
   (def dy (nth (:pos (:dest blip)) 1))
 
 
+
   )
 
 ; it would be cool to bind a vim key to eval a sexpr
 ; at a specific bookmark
 ; :nnoremap <f11> 'e,e
+
+
+(comment
+  ; this comment is for figuring out multimethods
+
+  (defmulti my-add 
+    (fn [x y] 
+      (and (string? x) (string? y))))
+
+  (defmethod my-add true [x y]
+    (str x y))
+
+  (defmethod my-add false [x y]
+    (+ x y)) 
+
+  (my-add "hello " "bub")
+  (my-add 2 2) 
+
+
+
+  (derive ::rect ::shape)
+
+  (defmulti bar (fn [x y] [x y]))
+  (defmethod bar [::rect ::shape] [x y] :rect-shape)
+  (defmethod bar [::shape ::rect] [x y] :shape-rect)
+
+  (bar ::rect ::rect)
+
+  (prefer-method bar [::rect ::shape] [::shape ::rect])
+  (bar ::rect ::rect)
+
+  
+
+
+  ; set up a lil heirarchy of node kinds
+  (derive ::source ::node)
+  (derive ::source-octave ::source)
+
+  (derive ::sink ::node)
+  (derive ::sink-sine ::source)
+
+  (defmulti react (fn [src sink] [(:kind src) (:kind sink)]))
+  (defmethod react [::source-octave ::sink-sine]
+    [src sink]
+    (println "an octave source at" (:pos src) 
+             "has sent a blip to a sine sink at" (:pos sink)))
+
+  (react {:kind ::source-octave :pos [0 0]}
+         {:kind ::sink-sine     :pos [100 100]})
+
+  (defmethod react :default
+    [src sink] 
+    (println "can't react to some crazy unidentified event"))
+
+  (react {:kind :source :pos [0 100]}
+         {:kind :sink :pos [0 100]} )
+  ; not sure if i really need/want double colons 
+
+
+  ; let's try relying on a heirarchy
+  (derive ::source-wacky ::source)
+  (defmethod react
+    [::source ::sink-sine]
+    [src sink]
+    (println "sink-sine hit by unknown source" (:kind src))
+    )
+  (react {:kind ::source-wacky :pos [0 100]}
+         {:kind ::sink-sine :pos [0 100]} )
+
+
+comment)
+
+(comment
+  ; let's try another graph representation
+  (def my-graph {:n0 {:kind   :note-sink 
+                      :pos    [250 150]
+                      :note   65 } 
+                 :n1 {:kind   :note-sink 
+                      :pos    [150 300]
+                      :note   70 } 
+                 :n2 {:kind   :octave-source 
+                      :pos    [50 50]
+                      :octave 0  
+                      ; NB: keywords, not references
+                      :sinks  {:n0 [0 50] ; vector of blip positions
+                               :n1 [20]   ; which are scalar distances
+                               ; along edges
+                               }
+                      }
+                 })
+
+  ; some people on the internets seem to say 
+  ; keeping nodes and edges as separate lists is most convenient
+  
+  (def my-graph 
+    {:nodes {:n0 {:kind   :octave-source 
+                  :pos    [50 50]
+                  :octave 0  
+                  ; NB: keywords, not references
+                  }
+             :n1 {:kind   :note-sink 
+                  :pos    [250 150]
+                  :note   65 } 
+             :n2 {:kind   :note-sink 
+                  :pos    [150 300]
+                  :note   70 } 
+             }
+
+     ; :pulses is a vector of scalar pulse positions along edge
+     ; on every simulation tick, pulse positions are incremented
+     ; on some interval, new pulses are conj'd in
+     ; once pulses arrive, a reaction occurs
+     ; and the pulse is removed from :pulses
+     :edges [{:src    :n0
+              :dest   :n1
+              :pulses [0 100]}
+             {:src    :n0
+              :dest   :n2
+              :pulses [50]}]}) 
+
+
+  ; dispeatch on :kind of src and dest nodes
+  (defmulti react-pulse-arrival 
+    (fn [graph edge] 
+      [(:kind (graph (:src  edge)))
+       (:kind (graph (:dest edge)))]))
+
+  (defmethod react-pulse-arrival 
+    [:octave-source :node-sink]
+    [graph edge]
+    (let [{:keys [:src :dest :pulses]} edge]
+      ; maybe schedule up some reactions with at-at
+      (assoc-in graph [:nodes src :animations] 
+                conj {:kind    :expanding-circle
+                      :started (now)
+                      })
+      )
+    ; play sound
+    ; but how do we alter the graph?
+      ; maybe the state should be a transactional ref
+      ; we could then alter it
+    (swap! the-state
+           (fn [{:keys nodes edges} :as st]
+             ((assoc-in st [:edges]))
+             )
+           )
+    ; how do we start an animation sequence?
+    )
+
+    ; maybe pass the whole state in?
+    ; then return the new state?
+
+comment)
+
+(comment    
+  ; maybe we should make animation parametric
+  ; append a map with a :start-time and :duration
+  ; and write rendering functions in terms of time
+  ; index relative to :start-time
+  ;
+  ; expired animation descriptors would get filtered each tick
+  ;
+  ; could do sprite animation by queuing several events
+
+
+  ; time is probably a Long of ticks  
+  ; maybe instead of (now), a dynamic binding *tick*
+  ; that we could update per tick... that way time stays consistent
+  ; during all update functions, and we can test time-based effects
+  ; easily...
+  (def ^:dynamic *tick*)
+  
+  (defn fanout [& fns]
+    (fn [x] (doall (map #(% x) fns))))
+
+  ; was having trouble with unbound var exceptions here
+  ; turns out i was returning lazy seqs that didn't read the
+  ; *tick* var until after returning from the binding form.
+  ; http://cemerick.com/2009/11/03/be-mindful-of-clojures-binding/
+  ;
+  (binding [*tick* 42]
+    (class *tick*)
+    (doall
+      (map (fanout current? expired?)
+         [{:begin 30 :duration 10}      ; false true
+          {:begin 50 :duration 10}      ; false false
+          {:begin 40 :duration 10}])))  ; true false
+
+  (defn expired? 
+    [{:keys [begin duration]}]
+    (> *tick* (+ begin duration)))
+
+  (defn current?
+    [{:keys [begin duration]}]
+    (< begin *tick* (+ begin duration))) 
+
+
+  (defn handle-tick 
+    [state]
+    (let [state          (remove expired? state)
+          current-events (filter currently? (:events state))] 
+      ; do i need a dorun or something/
+      (reduce handle-event state current-events)))
+  
+  ; handle-event is a multimethod
+    comment)
