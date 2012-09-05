@@ -532,7 +532,9 @@ comment)
     [state evt]
     (println "*tick*:" *tick* " i'm an event" evt)
     state)
+comment ) 
 
+(comment
 
   (defn handle-tick 
     [state]
@@ -548,21 +550,64 @@ comment)
          state {:events [{:kind     :println-test 
                           :begin    2
                           :duration 5
-                          :println-test-label "first (2+5)"
+                          :label "first"
                           }
                          {:kind     :println-test 
                           :begin    5
                           :duration 3
-                          :println-test-label "second (5+3)"
+                          :label "second"
                           }]}]
     (when (< tick 10) 
       (println "processing tick" tick) 
       #_(println "state:" state)
       #_(Thread/sleep *tick-duration*)
-      (let [state  (binding [*tick* tick] 
-                     (handle-tick state))] 
+      (let [state (binding [*tick* tick] 
+                    (handle-tick state))] 
         (recur (inc tick) state))))
   
+  ; so what's the minimal set of stuff in an event?
+    ; :begin      start time index
+    ; :duration   length of event in ticks
+    ; :kind       dispatch tag for tick service function
+  ; maybe we need a unique :id?
+  ; and then of course each type of event will define its own extra keys
   
+  ; next trick: use the event system to actually update something on a screen
+
+  ; also want to get towards parameterized drawing functions
+  ; so we can just add an event like
+  ; {:kind :blip-transit
+  ;  :begin ...
+  ;  :duration ...
+  ;  :edge  [:n1 :n2] }
+  ; and the drawing function can calculate the blip position
+  ; based on :begin
+  
+  ; but it's kinda weird for a drawing function to peer into an event stream...
+
+  ; what about setup and teardown functions for events?
+  ; could have an event teardown remove a blip from the graph etc.
+
+
+  (defmulti event-setup
+    "perform whatever setup is necessary for an event, based on its :kind"
+    (fn [_ evt] (:kind evt)))
+
+  (defmethod event-setup :poke-state 
+    [state evt]
+    (update-in state [:farty :nonsense] (fnil inc 0)))
+
+  (defmulti event-teardown
+    (fn [_ evt] (:kind evt)))
+
+  (defmethod event-teardown :poke-state 
+    [state evt]
+    (update-in state [:farty :nonsense] (fnil dec 0)))
+
+  (-> {}
+    (event-setup    {:kind :poke-state})
+    (event-setup    {:kind :poke-state})
+    (event-teardown {:kind :poke-state}))
+
     comment)
 
