@@ -517,16 +517,52 @@ comment)
 
   (defn current?
     [{:keys [begin duration]}]
-    (< begin *tick* (+ begin duration))) 
+    (<= begin *tick* (+ begin duration))) 
+
+  (def ^:dynamic *tick-duration* 1000)
+
+  (defn current-tick []
+    (/ (System/currentTimeMillis) *tick-duration*))
+
+  (defmulti tick-event
+    "events in progress can define a method that gets called on every system tick"
+    (fn [_ evt] (:kind evt)))
+
+  (defmethod tick-event :println-test 
+    [state evt]
+    (println "*tick*:" *tick* " i'm an event" evt)
+    state)
 
 
   (defn handle-tick 
     [state]
-    (let [state          (remove expired? state)
+    (let [state          (update-in state [:events] #(remove expired? %))
           current-events (filter current? (:events state))] 
-      ; do i need a dorun or something/
-      (reduce handle-event state current-events)))
+      #_(println "state:" state)
+      #_(println "events:" (:events state))
+      #_(println "current-events:" current-events)
+      ; do i need a dorun or something?
+      (reduce tick-event state current-events)))
+
+  (loop [tick  0
+         state {:events [{:kind     :println-test 
+                          :begin    2
+                          :duration 5
+                          :println-test-label "first (2+5)"
+                          }
+                         {:kind     :println-test 
+                          :begin    5
+                          :duration 3
+                          :println-test-label "second (5+3)"
+                          }]}]
+    (when (< tick 10) 
+      (println "processing tick" tick) 
+      #_(println "state:" state)
+      #_(Thread/sleep *tick-duration*)
+      (let [state  (binding [*tick* tick] 
+                     (handle-tick state))] 
+        (recur (inc tick) state))))
   
-  ; handle-event is a multimethod
+  
     comment)
 
