@@ -502,7 +502,6 @@ comment)
   ; turns out i was returning lazy seqs that didn't read the
   ; *tick* var until after returning from the binding form.
   ; http://cemerick.com/2009/11/03/be-mindful-of-clojures-binding/
-  ;
   (binding [*tick* 42]
     (class *tick*)
     (doall
@@ -595,7 +594,7 @@ comment )
 
   (defmethod event-setup :poke-state 
     [state evt]
-    (update-in state [:farty :nonsense] (fnil inc 0)))
+    (assoc-in state [:entities :blip0] {:pos 0}))
 
   (defmulti event-teardown
     (fn [_ evt] (:kind evt)))
@@ -604,10 +603,39 @@ comment )
     [state evt]
     (update-in state [:farty :nonsense] (fnil dec 0)))
 
+  (defmethod event-teardown :remove-entity
+    [state evt]
+    (dissoc-in state [:entities (:entity-id evt)]))
+
+  (defonce last-id* (atom 0))
+  (defn fresh-id! []
+    (swap! last-id* inc))
+
+  (defn create-event 
+    "create a new event from the given evt descriptor.
+    if not supplied, :begin will default to the next tick." 
+    [state evt]
+    {:pre [(contains? evt :kind) 
+           (contains? evt :duration)]}
+    (let [id    (or (:id evt) (fresh-id!))
+          begin (or (:begin evt) (inc *tick*))]
+      (assoc-in state [:events id] (assoc evt :begin begin))))
+
+  (defn create-finite-entity 
+    [ent duration]
+    (-> state
+      (create-event {:kind :remove-entity 
+                     :duration duration})
+      (assoc-in state [:entities (:id ent)] ent)))
+
   (-> {}
     (event-setup    {:kind :poke-state})
     (event-setup    {:kind :poke-state})
     (event-teardown {:kind :poke-state}))
+
+  ; this file is getting messy now, with all kinds of half-baked ideas.
+  ; let's start a new file and do a minimum viable implementation
+  ; for the most basic ideas.  pullin' a pólya, yo
 
     comment)
 
