@@ -22,5 +22,19 @@ vi:ft=vo_base
 			state is a single atom
 			entities are simple maps
 				all have a :kind tag used for method dispatching
+		ended up breaking it up into multiple modules
+			calling it 'nodebeat' for now
+			need a better/more original name
+
+
+2012-09-11
+	back at it
+	drawing seems to be working out okay
+	now for some state update & ticking
+	also found a nice project to steal ideas from
+		https://github.com/gtrak/quilltest
+		he does some interesting stuff with an applet API
+		rather than just defsketch
+		also does some input handling
 
 

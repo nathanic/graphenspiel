@@ -18,10 +18,27 @@
              }]
    })
 
+; the once piece of shared mutable state
 (def the-state (atom initial-state))
 
-(defn get-edge-nodes 
+(defn edge-nodes 
+  "returns the pair of node records referenced by an edge"
   [state edge]
   [(get-in state [:graph :nodes (first edge)])
    (get-in state [:graph :nodes (second edge)])])
 
+
+(comment
+  (let [st @the-state] 
+    (edge-nodes st (get-in st [:graph :edges 0])))
+  )
+
+
+; now to do some state-updating
+; and entity ticking
+(comment
+  
+  ; future, loop/recur, thread sleep, 
+  ; reduce node ticks into the state 
+  ; i guess also tick pulses 
+  )

@@ -3,7 +3,7 @@
         nodebeat.math
         quil.core))
 
-; swanky helpers
+; swanky li'l helpers
 (use '[clojure repl pprint])
 
 ; drawing config
@@ -17,7 +17,7 @@
   (stroke-weight 5)
   (stroke 128 128 128)
   (doseq [edge (get-in state [:graph :edges])]
-    (->> (get-edge-nodes state edge)
+    (->> (edge-nodes state edge)
       (map :pos)
       (apply line))))
 
@@ -28,6 +28,7 @@
           :let [[x y] (:pos node)
 
                 ; this color business is temporary
+                ; will probably eventually go to a multimethod
                 col   (case (:kind node) 
                         :source [255   0   0] 
                         :sink   [128 128 255]) ]] 
@@ -39,10 +40,8 @@
   (no-stroke)
   (fill 0 200 30)
   (doseq [pulse (get-in state [:pulses])
-          :let [[org dst] (get-edge-nodes state (:edge pulse))
-                [x y]     (linterp (:pos org) (:pos dst) (:pos pulse))
-                ]] 
-    ; (println "ellipse" x y pulse-radius pulse-radius)
+          :let [[org dst] (edge-nodes state (:edge pulse))
+                [x y]     (linterp (:pos org) (:pos dst) (:pos pulse)) ]] 
     (ellipse x y pulse-radius pulse-radius))) 
 
 
@@ -57,7 +56,6 @@
 (defn- setup []
   (frame-rate 24)
   (smooth)
-  (background 180)
   (stroke 0)
   (stroke-weight 5)
   (fill 255 25)
