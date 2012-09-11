@@ -1,0 +1,26 @@
+Notes for various Quil adventures
+vi:ft=vo_base
+
+2012-09-10
+	been noodling with making a nodebeat-alike for a while
+	lots of messy half-baked ideas in circles.clj
+	feel like i need to start over with a fresh file
+	inspirations
+		http://createdigitalmusic.com/2010/10/pretty-nodal-non-linear-music-on-ipad-iphone-and-big-dodecahedrons/
+		http://createdigitalmusic.com/2011/05/with-networks-of-notes-nodal-generates-music-updated-macwindows-app-now-adds-midi/
+		http://createdigitalmusic.com/2012/08/chain-chain-chain-crazy-nodal-note-sequencing-departs-from-everyday-step-sequencers-kontakt/
+		https://github.com/prtcl/tibersynth
+	i am suffering from analysis paralysis about the best way to implement this
+		need to just pick something and go  
+		i can always rewrite something if i want to
+		need to just do a minimum viable version, and go from there
+	starting a new ns, minimal-nodebeat
+		design choices
+			only simple pulse sources
+			and simple pulse sinks
+				to start out, sinks just change color when they receive a note
+			state is a single atom
+			entities are simple maps
+				all have a :kind tag used for method dispatching
+
+
