@@ -1,6 +1,6 @@
-(ns nodebeat.drawing
-  (:use nodebeat.core
-        nodebeat.math
+(ns graphenspiel.drawing
+  (:use graphenspiel.core
+        graphenspiel.math
         quil.core))
 
 ; swanky li'l helpers
@@ -67,7 +67,7 @@
 (defn start
   []
   (defsketch minimal-nodes 
-             :title "minimal nodebeat recreation"
+             :title "Graphenspiel!"
              :setup setup
              :draw draw
              :size [cx cy]

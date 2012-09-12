@@ -1,4 +1,4 @@
-(ns nodebeat.math
+(ns graphenspiel.math
   (:import java.lang.Math))
 
 ; where did these come from before?  quil?

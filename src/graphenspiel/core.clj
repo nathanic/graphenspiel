@@ -1,5 +1,5 @@
-(ns nodebeat.core
-  (:use [nodebeat.math :only [distance]])
+(ns graphenspiel.core
+  (:use [graphenspiel.math :only [distance]])
   (:import java.lang.Thread))
 
 (def p 
@@ -173,6 +173,8 @@
   (first (diff st st') )  ; st-only
   (second (diff st st') ) ; st'-only
 
+  (with-out-str (time (sim-step st)))
+
   (def st'
     (loop [x 100, st st] 
       (if (pos? x) 
@@ -187,9 +189,9 @@
 
 
 (comment
-  (def m (ns-map 'nodebeat.core))
+  (def m (ns-map 'graphenspiel.core))
   (pprint (keys m))
-  (ns-publics 'nodebeat.core)
+  (ns-publics 'graphenspiel.core)
   )
 
 

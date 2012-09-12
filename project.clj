@@ -1,5 +1,5 @@
-(defproject nodebeat "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
+(defproject graphenspiel "0.1.0-SNAPSHOT"
+  :description "A graph-based music toy"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
