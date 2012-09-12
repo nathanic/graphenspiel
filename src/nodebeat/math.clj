@@ -6,16 +6,10 @@
 ; (def ^:private pow java.lang.Math/pow)
 
 (defn distance 
-  "calculate the euclidian distance (l2 norm) between two points"
+  "calculate the euclidian distance (L2 norm) between two points"
   [[x1 y1] [x2 y2]]
-  (Math/hypot (- x2 x1) (- y2 y1))
-  #_(sqrt (+ (pow (- x2 x1) 2)
-           (pow (- y2 y1) 2))))
+  (Math/hypot (- x2 x1) (- y2 y1)))
 
-; need a rendering function based on the-state
-; also need my tick machinery
-; which to do first?
-; a simple drawing routine then
 (defn linterp 
   "perform linear interpolation between two points
   given a scalar position along the line they form.
