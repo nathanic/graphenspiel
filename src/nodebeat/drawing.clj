@@ -59,6 +59,9 @@
   (stroke 0)
   (stroke-weight 5)
   (fill 255 25)
+
+  ; TODO: reference the state atom in this sketch instance's state?
+  ; that way we could have multiple independent instances within one process 
   )
 
 (defn start

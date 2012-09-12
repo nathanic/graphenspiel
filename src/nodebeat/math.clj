@@ -1,6 +1,5 @@
 (ns nodebeat.math
-  (:import java.lang.Math)
-  )
+  (:import java.lang.Math))
 
 ; where did these come from before?  quil?
 ; (def ^:private sqrt java.lang.Math/sqrt)
