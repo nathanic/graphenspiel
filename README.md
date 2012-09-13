@@ -4,7 +4,7 @@ Graphenspiel is a graph-based musical toy.
 
 It is very incomplete at this point.
 
-I'm using [Quil](https://github.com/quil/quil) (and thereby [Processing](http://processing.org) for the UI.
+I'm using [Quil](https://github.com/quil/quil) (and thereby [Processing](http://processing.org)) for the UI.
 
 Eventually it will likely use [Overtone](http://overtone.github.com/) to produce sounds, although I might offer an easier-to-setup fallback mode to a less comprehensive JVM synthesizer lib.
 
