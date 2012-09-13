@@ -2,19 +2,38 @@
   (:use [graphenspiel.math :only [distance]])
   (:import java.lang.Thread))
 
+(def ^:dynamic *sim-interval* 
+  "time between state ticks in milliseconds" 
+  50)
+
+(def ^:dynamic *pulse-step-size*
+  "distance traveled by a pulse in one tick"
+  1)
+
+(def ^:dynamic *pulse-generation-interval*
+  "how long, in ticks, a node goes between birthing pulses"
+  100)
+
+; the current tick index of the simulation
+(defonce tick* (atom 0))
+
+(def quit* 
+  "when true, the update thread will [eventually] quit"
+  (atom false))
+
 (def p 
   "less annoying alias for (partial)"
   partial)
 
 ; let's just set up a simple initial state and work with that for now
 (def initial-state
-  {:graph {:nodes {:src0 {:kind :source
+  {:graph {:nodes {:src0 {:kind ::source
                           :pos [50 50]
                           :pulse-interval 100
                           :created 0 ; beginning of time
                           :id :src0
                           }
-                   :snk0 {:kind :sink
+                   :snk0 {:kind ::sink
                           :pos [100 200]
                           :id :snk0
                           }
@@ -42,7 +61,8 @@
   "returns the list of all edges directed out from a given node,
   which is specified by id"
   [st node-id]
-  (filter (fn [[src snk]] (= node-id src)) (get-in st [:graph :edges])))
+  (filter (fn [[src snk]] (= node-id src)) 
+          (get-in st [:graph :edges])))
 
 (comment
   (def st @the-state)
@@ -57,23 +77,38 @@
       (apply distance (map :pos (edge-nodes st (:edge pulse))))))
 
 
+(defn time-to-add-pulses?
+  [node]
+  (= 0
+     (mod (- @tick* (:created node)) 
+          *pulse-generation-interval*)))
+
+(defn add-pulses 
+  [st edges]
+  (let [pulses (for [edge edges] 
+                 {:pos 0, :edge edge})] 
+    (update-in st [:pulses] concat pulses)))
 
 (defmulti handle-tick (fn [st node] (:kind node)))
 
-(defmethod handle-tick :source
-  [st node]
-  ; see if it's time to generate a new pulse
-  ; if (current time - begin time) % generation period == 0
-  ; then generate a new set of pulses 
 
-  (let [pulses (for [edge (edges-from-node st (:id node))] 
-                     {:pos 0, :edge edge})] 
-    (update-in st [:pulses] concat pulses))
-  st)
+(defmethod handle-tick ::source
+  [st node]
+  (if (time-to-add-pulses? node) 
+    (add-pulses st (edges-from-node st (:id node)))
+    st))
+
+(comment
+  (def st @the-state)
+  (def node (get-in st [:graph :nodes :src0]))
+  (:pulses (add-pulses st (edges-from-node st (:id node))))
+  (reset! tick* 100)
+  (swap! the-state handle-tick (get-in @the-state [:graph :nodes :src0]))
+  )
 
 (defmethod handle-tick :default
   [st node]
-  (println "WARNING: handle-tick :default called")
+  #_(println "WARNING: handle-tick :default called")
   st)
 
 
@@ -81,15 +116,6 @@
   (handle-tick st (get-in st [:graph :nodes :src0]))
   )
 
-(def ^:dynamic *sim-interval* 
-  "time between state ticks in milliseconds" 
-  100)
-
-(def ^:dynamic *pulse-step-size*
-  "distance traveled by a pulse in one tick"
-  10)
-
-(def quit* (atom false))
 
 ; what if one node handler alters the graph, removing another node?
 ; we might call a tick handler for a node that doesn't exist anymore.
@@ -99,7 +125,7 @@
 (defn tick-nodes
   "transform the state by evaluating all of the node tick handlers"
   [st]
-  (reduce handle-tick st (get-in st [:graph :nodes])))
+  (reduce handle-tick st (vals (get-in st [:graph :nodes]))))
 
 ; this guy's job is *not* handling arrival reactions
 (defn advance-pulses
@@ -156,11 +182,13 @@
 ; asynchronously, so i guess we had better lock it.
 ; there still has to be some way to use the fact that the
 ; drawing thread is never going to mutate the-state...
+; TODO: grok the locking semantics of STM refs
 (defn sim-loop
   []
   (while (not @quit*)
+    (swap! tick* inc)
     (swap! the-state sim-step)
-    ; (Thread/sleep *sim-interval*)
+    (Thread/sleep *sim-interval*)
     )) 
 
 
@@ -168,6 +196,7 @@
 (use '[clojure repl pprint data])
 
 (comment
+  (reset! the-state initial-state)
   (def st @the-state)
   (def st' (sim-step st))
   (first (diff st st') )  ; st-only
@@ -181,10 +210,20 @@
         (recur (dec x) (sim-step st))
         st)))
 
-  (future
-    (sim-loop))
+  (do
+    ; step the simulation once
+    (swap! tick* inc)
+    (swap! the-state sim-step))
+
+  (def sim-thread
+    (future
+      (sim-loop)))
+  (future-cancel sim-thread)
+
   (swap! quit* not)
 
+  (require '[graphenspiel.drawing :as drawing])
+  (drawing/start)
   )
 
 

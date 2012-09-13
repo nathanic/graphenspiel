@@ -30,8 +30,8 @@
                 ; this color business is temporary
                 ; will probably eventually go to a multimethod
                 col   (case (:kind node) 
-                        :source [255   0   0] 
-                        :sink   [128 128 255]) ]] 
+                        :graphenspiel.core/source [255   0   0] 
+                        :graphenspiel.core/sink   [128 128 255]) ]] 
     (apply fill col)
     (ellipse x y node-radius node-radius) ))
 
