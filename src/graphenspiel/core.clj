@@ -74,12 +74,19 @@
   (def st @the-state)
   (edge-nodes st (get-in st [:graph :edges 0]))
   (edges-from-node st :src0)
-  (add-node st {:id :snk1
-                :created @tick*
-                :pos [100 100]
-                :kind ::sink
-                
-                })
+
+  (pprint
+    (add-node st 
+              {:id :snk1
+               :pos [100 100]
+               :kind ::sink}
+              [[:src0 :snk1]]))
+  (swap! the-state 
+         add-node {:id :snk1
+                   :pos [100 100]
+                   :kind ::sink}
+                  [[:src0 :snk1]])
+  (swap! the-state assoc-in [:graph :nodes :snk1 :pos] [140 130])
   )
 
 (defn arrived? 
