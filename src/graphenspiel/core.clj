@@ -29,7 +29,7 @@
 (def initial-state
   {:graph {:nodes {:src0 {:kind ::source
                           :pos [50 50]
-                          :pulse-interval 100
+                          ; :pulse-interval 100
                           :created 0 ; beginning of time
                           :id :src0
                           }
@@ -64,10 +64,22 @@
   (filter (fn [[src snk]] (= node-id src)) 
           (get-in st [:graph :edges])))
 
+(defn add-node 
+  [st node edges]
+  (-> st
+    (assoc-in [:graph :nodes (:id node)] node)
+    (update-in [:graph :edges] concat edges)))
+
 (comment
   (def st @the-state)
   (edge-nodes st (get-in st [:graph :edges 0]))
   (edges-from-node st :src0)
+  (add-node st {:id :snk1
+                :created @tick*
+                :pos [100 100]
+                :kind ::sink
+                
+                })
   )
 
 (defn arrived? 
@@ -225,6 +237,7 @@
   (require '[graphenspiel.drawing :as drawing])
   (drawing/start)
   )
+
 
 
 (comment
