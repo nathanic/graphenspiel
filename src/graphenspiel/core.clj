@@ -14,6 +14,9 @@
   "how long, in ticks, a node goes between birthing pulses"
   30)
 
+(def ^:dynamic *reaction-duration*
+  5)
+
 ; the current tick index of the simulation
 (defonce tick* (atom 0))
 
@@ -49,7 +52,7 @@
 ; but it simplifies passing data around if nodes know their own id
 
 ; the once piece of shared mutable state
-(def the-state (atom initial-state))
+(defonce the-state (atom initial-state))
 
 (defn edge-nodes 
   "returns the pair of node records referenced by an edge"
@@ -87,6 +90,42 @@
                    :kind :sink}
                   [[:src0 :snk1]])
   (swap! the-state assoc-in [:graph :nodes :snk1 :pos] [140 130])
+
+  (swap! the-state 
+         add-node {:id :snk2
+                   :pos [200 100]
+                   :kind :sink}
+                  [[:src0 :snk2]
+                   [:src2 :snk2]
+                   ])
+  (swap! the-state assoc-in [:graph :nodes :snk2 :pos] [200 70])
+
+  (pprint @the-state)
+  (swap! the-state
+         add-node {:id :src1
+                   :pos [200 200]
+                   :kind :source
+                   :created @tick* }
+                  [[:src1 :snk0]
+                   [:src1 :snk1] ])
+  (swap! the-state assoc-in [:graph :nodes :src1 :pos] [210 230])
+  (swap! the-state assoc-in [:graph :nodes :src1 :pos] [300 300])
+  (swap! the-state assoc-in [:graph :nodes :src2 :pos] [300 100])
+
+  (swap! the-state
+         add-node {:id :src2
+                   :pos [300 200]
+                   :kind :source
+                   :created @tick* }
+                  [[:src2 :snk1] ])
+
+  (def myatom (atom {}))
+  (reset! myatom :farts)
+  (prn @myatom)
+  (type @myatom)
+  (reset! myatom 0)
+  (swap! myatom inc)
+
   )
 
 (defn arrived? 
@@ -145,7 +184,7 @@
   (swap! the-state handle-tick (get-in @the-state [:graph :nodes :src0]))
 
   (def st' (assoc-in st [:graph :nodes :snk0 :reacting]
-                     {:start @tick*, :dur 10}))
+                     {:start @tick*, :dur *reaction-duration*}))
   (def node' (get-in st' [:graph :nodes :snk0]))
   (pprint 
     (handle-tick st' node'))
