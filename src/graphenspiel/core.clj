@@ -8,11 +8,11 @@
 
 (def ^:dynamic *pulse-step-size*
   "distance traveled by a pulse in one tick"
-  1)
+  3)
 
 (def ^:dynamic *pulse-generation-interval*
   "how long, in ticks, a node goes between birthing pulses"
-  100)
+  30)
 
 ; the current tick index of the simulation
 (defonce tick* (atom 0))
@@ -27,13 +27,13 @@
 
 ; let's just set up a simple initial state and work with that for now
 (def initial-state
-  {:graph {:nodes {:src0 {:kind ::source
+  {:graph {:nodes {:src0 {:kind :source
                           :pos [50 50]
                           ; :pulse-interval 100
                           :created 0 ; beginning of time
                           :id :src0
                           }
-                   :snk0 {:kind ::sink
+                   :snk0 {:kind :sink
                           :pos [100 200]
                           :id :snk0
                           }
@@ -79,12 +79,12 @@
     (add-node st 
               {:id :snk1
                :pos [100 100]
-               :kind ::sink}
+               :kind :sink}
               [[:src0 :snk1]]))
   (swap! the-state 
          add-node {:id :snk1
                    :pos [100 100]
-                   :kind ::sink}
+                   :kind :sink}
                   [[:src0 :snk1]])
   (swap! the-state assoc-in [:graph :nodes :snk1 :pos] [140 130])
   )
@@ -111,18 +111,44 @@
 (defmulti handle-tick (fn [st node] (:kind node)))
 
 
-(defmethod handle-tick ::source
+(defmethod handle-tick :source
   [st node]
   (if (time-to-add-pulses? node) 
     (add-pulses st (edges-from-node st (:id node)))
     st))
 
+(defmethod handle-tick :sink
+  [st node]
+  ; clean up any expired reactions
+  (if-let [{:keys [start dur]} (:reacting node)] 
+    (if (> @tick* (+ start dur))
+      ; why is there no dissoc-in?
+      ; (dissoc-in st [:graph :nodes (:id node) :reacting])
+      (assoc-in st [:graph :nodes (:id node)]
+                (dissoc node :reacting))
+      st)
+    st)) ; this structure feels a bit weird
+
+; something is halting the update thread when we get to an arrival
+; we should set up an almost-arrived state, and step the simulation
+; to see what happens.
+
+(comment
+  (def st'' @the-state)
+  (sim-step st'')
+  )
 (comment
   (def st @the-state)
-  (def node (get-in st [:graph :nodes :src0]))
+  (def node (get-in st [:graph :nodes :snk0]))
   (:pulses (add-pulses st (edges-from-node st (:id node))))
   (reset! tick* 100)
   (swap! the-state handle-tick (get-in @the-state [:graph :nodes :src0]))
+
+  (def st' (assoc-in st [:graph :nodes :snk0 :reacting]
+                     {:start @tick*, :dur 10}))
+  (def node' (get-in st' [:graph :nodes :snk0]))
+  (pprint 
+    (handle-tick st' node'))
   )
 
 (defmethod handle-tick :default
@@ -160,14 +186,32 @@
   (update-in st [:pulses]
              (p remove (p arrived? st))))
 
+(defmulti react-arrival 
+  (fn [st pulse] 
+    (map :kind (edge-nodes st (:edge pulse)))))
+
+; we'll eventually have more node types
+(defmethod react-arrival [:source :sink]
+  [st pulse]
+  #_(println "arrival!")
+  (let [snk-id (-> pulse :edge second)]
+    (assoc-in st [:graph :nodes snk-id :reacting]
+              {:start @tick*, :dur   10    }))) 
+
+; need an interesting structure here
+; a reduce but also a map...
+; or is it just a reduce...
 (defn react-arrivals 
   [st] 
-  ; not implemented yet!
-  #_(let [arrivals (filter (p arrived? st) (:pulses st))]
-      (doseq [pulse arrivals] 
-        (react-arrival pulse)))
-  st)
+  (let [arrivals (filter (p arrived? st) (:pulses st))]
+    (reduce react-arrival st arrivals)))
 
+(comment
+  (def st @the-state)
+  (reduce (fn [n x] (inc n)) 0 [1 2 3])
+  (react-arrival st {:edge [:src0 :snk0]})
+  (react-arrivals st)
+  )
 (comment
   ; i should turn these things into unit tests...
   (def st initial-state)
@@ -215,7 +259,6 @@
 (use '[clojure repl pprint data])
 
 (comment
-  (reset! the-state initial-state)
   (def st @the-state)
   (def st' (sim-step st))
   (first (diff st st') )  ; st-only
@@ -229,16 +272,23 @@
         (recur (dec x) (sim-step st))
         st)))
 
+
+  (def states (atom []))
   (do
     ; step the simulation once
     (swap! tick* inc)
-    (swap! the-state sim-step))
+    (swap! the-state sim-step)
+    (swap! states conj @the-state)
+    )
 
   (def sim-thread
     (future
       (sim-loop)))
-  (future-cancel sim-thread)
+  (do  
+    (future-cancel sim-thread)
+    (reset! the-state initial-state))
 
+  (swap! the-state assoc-in [:graph :nodes :reacting] {:start @tick*, :dur 10})
   (swap! quit* not)
 
   (require '[graphenspiel.drawing :as drawing])
@@ -255,6 +305,5 @@
 
 
 ; next steps
-;   pulse regeneration
-;   have the live gui up while ticking state
 ;   arrival reactions
+;   click to create pulses?

@@ -30,8 +30,10 @@
                 ; this color business is temporary
                 ; will probably eventually go to a multimethod
                 col   (case (:kind node) 
-                        :graphenspiel.core/source [255   0   0] 
-                        :graphenspiel.core/sink   [128 128 255]) ]] 
+                        :source [255   0   0] 
+                        :sink   (if (contains? node :reacting) 
+                                  [200 200 40]
+                                  [128 128 255])) ]] 
     (apply fill col)
     (ellipse x y node-radius node-radius) ))
 
@@ -64,6 +66,7 @@
   ; that way we could have multiple independent instances within one process 
   )
 
+; TODO: applet stuff like gtrak's elastic collision demo?
 (defn start
   []
   (defsketch minimal-nodes 
