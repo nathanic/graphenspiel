@@ -15,7 +15,7 @@ I have also thought about making it generate generic [OSC](http://en.wikipedia.o
 
 Right now the main way I run it is to interact from a REPL or something like SLIME/VimClojure.  I personally use SLIMV.
 
-You can also `lein run` or `java -jar` the uberjar to play with it.
+You can also `lein run` or `java -jar` the [uberjar](https://github.com/downloads/nathanic/graphenspiel/graphenspiel-0.1.0-SNAPSHOT-standalone.jar) to play with it.
 
 In the applet, you can create sink nodes with left click, and source nodes with right click.  Pressing `r` will reset to the initial state, and `q` will kill the JVM.
 
