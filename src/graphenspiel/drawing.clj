@@ -77,6 +77,22 @@
   ; that way we could have multiple independent instances within one process 
   )
 
+(defn- mouse-clicked
+  []
+  ; create a new sink node at the point of the mouse click
+  (let [id (fresh-id! "snk")] 
+    (swap! the-state
+           add-node
+           {:id id 
+            :pos [(mouse-x) (mouse-y)]
+            :kind :sink}
+           [:src0 id]))
+  ; create edges to any nearby sources
+  ; what's nearby?  some kind of radius setting
+  ; naively we could calc the distance to all sources
+  )
+
+
 ; TODO: applet stuff like gtrak's elastic collision demo?
 (defn start
   []
@@ -85,6 +101,7 @@
              :setup setup
              :draw draw
              :size [cx cy]
+             :mouse-clicked mouse-clicked
              :keep-on-top true))
 
 (comment

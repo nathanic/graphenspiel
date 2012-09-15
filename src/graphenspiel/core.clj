@@ -29,6 +29,18 @@
 ; the current tick index of the simulation
 (defonce tick* (atom 0))
 
+(defonce id-seed*
+  (atom 0))
+
+(defn fresh-id!
+  "get a fresh id (a keyword for referencing nodes) with an optional prefix"
+  ([] 
+  (fresh-id! "id"))
+  ([prefix]
+  (keyword (str prefix (swap! id-seed* inc)))))
+
+; (fresh-id!)
+
 (def quit* 
   "when true, the update thread will [eventually] quit"
   (atom false))
@@ -322,9 +334,7 @@
     (swap! states conj @the-state)
     )
 
-  (def sim-thread
-    (future
-      (sim-loop)))
+  (def sim-thread (future (sim-loop)))
   (do  
     (future-cancel sim-thread)
     (reset! the-state initial-state))
