@@ -13,18 +13,18 @@
 
 (def ^:dynamic *sim-interval* 
   "time between state ticks in milliseconds" 
-  50)
+  10)
 
 (def ^:dynamic *pulse-step-size*
   "distance traveled by a pulse in one tick"
-  3)
+  1)
 
 (def ^:dynamic *pulse-generation-interval*
   "how long, in ticks, a node goes between birthing pulses"
-  50)
+  (* 5 50))
 
 (def ^:dynamic *reaction-duration*
-  5)
+  200)
 
 ; the current tick index of the simulation
 (defonce tick* (atom 0))
@@ -93,6 +93,7 @@
   (-> st
     (assoc-in [:graph :nodes (:id node)] node)
     (update-in [:graph :edges] concat edges)))
+
 
 (comment
   ; some fun interactive graph jiggery-pokery
@@ -352,6 +353,11 @@
   (def m (ns-map 'graphenspiel.core))
   (pprint (keys m))
   (ns-publics 'graphenspiel.core)
+
+
+  [(for [sink (filter #((= (:kind %) :sink)) 
+                      (vals (get-in st [:graph :nodes])))] 
+     [id (:id sink)])]
   )
 
 
