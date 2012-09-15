@@ -21,21 +21,32 @@
       (map :pos)
       (apply line))))
 
-(defn- draw-nodes 
-  [state]
+(defn draw-node* 
+  "helper to draw a node of a given color"
+  [node color]
   (stroke 0 0 0) 
-  (doseq [node (vals (get-in state [:graph :nodes]))
-          :let [[x y] (:pos node)
+  (apply fill color)
+  (let [[x y] (:pos node)] 
+    (ellipse x y node-radius node-radius)))
 
-                ; this color business is temporary
-                ; will probably eventually go to a multimethod
-                col   (case (:kind node) 
-                        :source [255   0   0] 
-                        :sink   (if (contains? node :reacting) 
-                                  [200 200 40]
-                                  [128 128 255])) ]] 
-    (apply fill col)
-    (ellipse x y node-radius node-radius) ))
+(defmulti draw-node (fn [state node] (:kind node)))
+
+(defmethod draw-node :source
+  [state node]
+  (draw-node* node [255 0 0]))
+
+(defmethod draw-node :sink
+  [state node]
+  (let [color (if (contains? node :reacting)
+                [200 200 40]
+                [128 128 255]) ] 
+    (draw-node* node color)))
+
+(defn- draw-nodes 
+  [st]
+  (stroke 0 0 0) 
+  (doseq [node (vals (get-in st [:graph :nodes]))]
+    (draw-node st node)))
 
 (defn- draw-pulses 
   [state]

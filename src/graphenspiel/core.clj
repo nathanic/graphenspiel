@@ -158,14 +158,14 @@
     (add-pulses st (edges-from-node st (:id node)))
     st))
 
+
 (defmethod handle-tick :sink
   [st node]
   ; clean up any expired reactions
   (if-let [{:keys [start dur]} (:reacting node)] 
     (if (> @tick* (+ start dur))
-      ; why is there no dissoc-in?
-      ; (dissoc-in st [:graph :nodes (:id node) :reacting])
-      (assoc-in st [:graph :nodes (:id node)]
+      (dissoc-in st [:graph :nodes (:id node) :reacting])
+      #_(assoc-in st [:graph :nodes (:id node)]
                 (dissoc node :reacting))
       st)
     st)) ; this structure feels a bit weird
@@ -349,4 +349,17 @@
 ;   click to create pulses?
 ;   drag/drop pulses
 ;   java sound api midi notes?
+
+
+
+
+(comment
+  ; let's try some java sound api midi 
+  (import '[javax.sound.midi MidiSystem Synthesizer MidiChannel MidiUnavailableException])
+
+  (def synth (MidiSystem/getSynthesizer))
+  ; MidiUnavailableException: Requested device not installed!
+  ; dang it.
+
+  )
 
