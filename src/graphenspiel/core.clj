@@ -2,6 +2,15 @@
   (:use [graphenspiel.math :only [distance]])
   (:import java.lang.Thread))
 
+; why the crap is this not in clojure.core?
+(defn dissoc-in
+  "Dissociates an entry from a nested associative structure where ks is a
+  sequence of keys and returns a new nested structure."
+  [m [k & ks]]
+  (if ks
+    (assoc m k (dissoc-in (get m k) ks))
+    (dissoc m k)))
+
 (def ^:dynamic *sim-interval* 
   "time between state ticks in milliseconds" 
   50)
@@ -12,7 +21,7 @@
 
 (def ^:dynamic *pulse-generation-interval*
   "how long, in ticks, a node goes between birthing pulses"
-  30)
+  50)
 
 (def ^:dynamic *reaction-duration*
   5)
@@ -74,6 +83,7 @@
     (update-in [:graph :edges] concat edges)))
 
 (comment
+  ; some fun interactive graph jiggery-pokery
   (def st @the-state)
   (edge-nodes st (get-in st [:graph :edges 0]))
   (edges-from-node st :src0)
@@ -118,14 +128,6 @@
                    :kind :source
                    :created @tick* }
                   [[:src2 :snk1] ])
-
-  (def myatom (atom {}))
-  (reset! myatom :farts)
-  (prn @myatom)
-  (type @myatom)
-  (reset! myatom 0)
-  (swap! myatom inc)
-
   )
 
 (defn arrived? 
@@ -344,5 +346,7 @@
 
 
 ; next steps
-;   arrival reactions
 ;   click to create pulses?
+;   drag/drop pulses
+;   java sound api midi notes?
+
