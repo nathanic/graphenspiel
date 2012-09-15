@@ -12,10 +12,12 @@ I have also thought about making it generate generic [OSC](http://en.wikipedia.o
 
 ## Usage
 
-Right now the only way to run it is to interact from a REPL or something like SLIME/VimClojure.  I personally use SLIMV.
 
-In the future `lein run` will do something useful.
+Right now the main way I run it is to interact from a REPL or something like SLIME/VimClojure.  I personally use SLIMV.
 
+You can also `lein run` or `java -jar` the uberjar to play with it.
+
+In the applet, you can create sink nodes with left click, and source nodes with right click.  Pressing `r` will reset to the initial state, and `q` will kill the JVM.
 
 ## License
 

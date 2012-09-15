@@ -1,7 +1,8 @@
 (ns graphenspiel.drawing
   (:use graphenspiel.core
         graphenspiel.math
-        quil.core))
+        quil.core
+        quil.applet))
 
 ; swanky li'l helpers
 (use '[clojure repl pprint])
@@ -116,6 +117,15 @@
   ; and only do radius compare within a certain range
   )
 
+(defn key-pressed []
+  (case (raw-key) 
+    \r (reset! the-state initial-state)
+
+    \q (do    
+         (reset! quit* true)
+         (applet-exit (current-applet)))
+
+    nil))
 
 ; TODO: applet stuff like gtrak's elastic collision demo?
 (defn start
@@ -126,6 +136,7 @@
              :draw draw
              :size [cx cy]
              :mouse-clicked mouse-clicked
+             :key-pressed key-pressed
              :keep-on-top true))
 
 (comment
