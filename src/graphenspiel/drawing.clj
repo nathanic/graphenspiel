@@ -13,6 +13,11 @@
 (def node-radius 50)
 (def pulse-radius 10)
 
+; contains the id of the node the user is currently dragging, or nil.
+(def dragging-node* (atom nil))
+
+(defn mouse-pos [] [(mouse-x) (mouse-y)])
+
 (defn- draw-edges
   [state]
   (stroke-weight 5)
@@ -68,6 +73,7 @@
     ))
 
 (defn- setup []
+  (shape-mode :center)
   (frame-rate 24)
   (smooth)
   (stroke 0)
@@ -127,7 +133,58 @@
 
     nil))
 
+(defn over-node?
+  [node mpos]
+  (<= (distance (:pos node) mpos) 
+      node-radius))
+
+(defn hovered-node-ids
+  "node ids of any nodes below mpos"
+  [st mpos]
+  (->> (get-in st [:graph :nodes])
+    (map (fn [[id node]]
+           (if (over-node? node mpos)
+             id
+             nil)))
+    (remove nil?)))
+
+(comment
+  (def st initial-state)
+  (over-node? {:pos [1 1]} [1 1])
+  (over-node? {:pos [1 1]} [100 100])
+  (over-node? {:pos [1 1]} [25 25])
+  (map (fn [[k v]] (str k ": " v)) {:foo 42, :bar "baz", :yup :nope})
+  (hovered-node-ids st [100 100])
+
+  (def mpos [100 100])
+  (remove nil? (map (fn [[id node]]
+                      (if (over-node? node mpos)
+                        id
+                        nil))
+                    (get-in st [:graph :nodes])))
+  )
+
+(defn mouse-dragged
+  []
+  (when-let [nid @dragging-node*]
+    (swap! the-state assoc-in [:graph :nodes nid :pos] (mouse-pos))))
+
+(defn mouse-pressed
+  []
+  ; see if we have a drag target
+  (when-let [nid (first (hovered-node-ids @the-state (mouse-pos)))]
+    ; i would like to pop the clicked node to the front of the z-order,
+    ; but right now my nodes are not actually stored in a deterministic order...
+    (reset! dragging-node* nid)))
+
+(defn mouse-released
+  []
+  ; cancel drag
+  (reset! dragging-node* nil))
+
+
 ; TODO: applet stuff like gtrak's elastic collision demo?
+; swing widgets in the owning frame for configuring behavior
 (defn start
   []
   (defsketch minimal-nodes
@@ -135,9 +192,14 @@
              :setup setup
              :draw draw
              :size [cx cy]
-             :mouse-clicked mouse-clicked
+             :keep-on-top true
+
              :key-pressed key-pressed
-             :keep-on-top true))
+             :mouse-clicked mouse-clicked
+             :mouse-dragged mouse-dragged
+             :mouse-pressed mouse-pressed
+             :mouse-released mouse-released))
+
 
 (comment
   (start)

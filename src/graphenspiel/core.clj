@@ -343,8 +343,9 @@
   (swap! the-state assoc-in [:graph :nodes :reacting] {:start @tick*, :dur 10})
   (swap! quit* not)
 
-  (require '[graphenspiel.drawing :as drawing])
-  (drawing/start)
+  (do
+    (require '[graphenspiel.drawing :as drawing])
+    (drawing/start))
   )
 
 
