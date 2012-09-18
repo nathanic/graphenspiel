@@ -1,8 +1,9 @@
+<img src="https://s3.amazonaws.com/github/downloads/nathanic/graphenspiel/early-screenshot.png" alt="Early Screenshot" title="Early Screenshot" align="right" />
 # Graphenspiel
 
-Graphenspiel is a graph-based musical toy.
+Graphenspiel is a graph-based musical toy.  The basic idea is that pulses travel from source nodes to sink nodes, and make noises when they arrive.
 
-It is very incomplete at this point.
+It is very incomplete at this point.  The core of the simulation is in place, but the graphics are very basic and sound is not wired up yet.
 
 I'm using [Quil](https://github.com/quil/quil) (and thereby [Processing](http://processing.org)) for the UI.
 
