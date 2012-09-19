@@ -28,25 +28,32 @@
       (apply line))))
 
 (defn draw-node*
-  "helper to draw a node of a given color"
-  [node color]
-  (stroke 0 0 0)
+  "helper to draw a node of a given color.  if not specified, 
+  the stroke color defaults to black."
+  [node color stroke-color]
   (apply fill color)
+  (apply stroke (or stroke-color [0 0 0])) 
   (let [[x y] (:pos node)]
     (ellipse x y node-radius node-radius)))
 
 (defmulti draw-node (fn [state node] (:kind node)))
 
 (defmethod draw-node :source
-  [state node]
-  (draw-node* node [255 0 0]))
+  [st node]
+  (draw-node* node [255 0 0]
+              (if (= (:linking-from st) (:id node))
+                [255 255 255] 
+                nil)))
 
 (defmethod draw-node :sink
-  [state node]
+  [st node]
   (let [color (if (contains? node :reacting)
                 [200 200 40]
                 [128 128 255]) ]
-    (draw-node* node color)))
+    (draw-node* node color
+                (if (= (:linking-from st) (:id node))
+                  [255 255 255] 
+                  nil))))
 
 (defn- draw-nodes
   [st]
@@ -86,28 +93,56 @@
 
 (defn- mouse-clicked
   []
-  ; create a new sink node at the point of the mouse click
-  (case (mouse-button)
-    :left (let [id (fresh-id! "snk")]
-            (swap! the-state
-                   add-node
-                   {:id id
-                    :pos [(mouse-x) (mouse-y)]
-                    :kind :sink}
-                   [[:src0 id]]))
-    :right (let [id (fresh-id! "src")]
-             (swap! the-state
-                    (fn [st]
-                      (add-node
-                        st
-                        {:id id
-                         :pos [(mouse-x) (mouse-y)]
-                         :kind :source
-                         :created @tick*}
-                        ; for now just hook it up to all sinks
-                        (for [sink (filter #(= (:kind %) :sink)
-                                           (vals (get-in st [:graph :nodes])))]
-                          [id (:id sink)]))))))
+  ; if ctrl is held down and we hit a node, 
+  ; then we enter alter-connection mode
+  ; set up some state to note the ID of the clicked node
+  (let [st @the-state] 
+    (if-let [clicked-nid (first (hovered-node-ids st (mouse-pos)))]
+      ; the user clicked directly on a node
+      (if-let [from-nid (:linking-from @the-state)] 
+        ; we are choosing a destination node
+        ; TODO: see if this link already exists and if so destroy it instead
+        ; TODO: enforce src->sink digraph
+        (swap! the-state (fn [st] 
+                           (-> st 
+                             ; N.B. that this does not necessarily respect the src->sink
+                             ; edge order expected elsewhere in the sim
+                             (update-in [:graph :edges] conj [from-nid clicked-nid])
+                             (dissoc :linking-from))))
+
+        ; not choosing a dest, but maybe a source
+        (when (= (key-as-keyword) :control)
+          (swap! the-state assoc :linking-from clicked-nid)))
+
+      ; the user didn't click on a node  
+      (do
+        ; clear any pending link alteration
+        (swap! the-state dissoc :linking-from)
+        (case (mouse-button)
+          ; create a new sink node at the point of the mouse click
+          :left (let [id (fresh-id! "snk")]
+                  (swap! the-state
+                         add-node
+                         {:id id
+                          :pos [(mouse-x) (mouse-y)]
+                          :kind :sink}
+                         [[:src0 id]]))
+          ; create a new source node
+          :right (let [id (fresh-id! "src")]
+                   (swap! the-state
+                          (fn [st]
+                            (add-node
+                              st
+                              {:id id
+                               :pos [(mouse-x) (mouse-y)]
+                               :kind :source
+                               :created @tick*}
+                              ; for now just hook it up to all sinks
+                              (for [sink (filter #(= (:kind %) :sink)
+                                                 (vals (get-in st [:graph :nodes])))]
+                                [id (:id sink)]))))))))) 
+  ; the foregoing is the longest clojure function i've ever written
+  ; need to break that monster up
 
 
   (comment
@@ -173,6 +208,9 @@
   []
   ; see if we have a drag target
   (when-let [nid (first (hovered-node-ids @the-state (mouse-pos)))]
+
+    
+    
     ; i would like to pop the clicked node to the front of the z-order,
     ; but right now my nodes are not actually stored in a deterministic order...
     (reset! dragging-node* nid)))
