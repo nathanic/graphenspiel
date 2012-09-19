@@ -90,9 +90,8 @@
   [st]
   (when-let [from-nid (:linking-from st)]
     (stroke 255 255 255 100)
-    (apply line 
-           (concat (get-in st [:graph :nodes from-nid :pos])
-                   (mouse-pos)))))
+    (line (get-in st [:graph :nodes from-nid :pos])
+          (mouse-pos))))
 
 (defn- draw []
   (let [state @the-state]
@@ -140,31 +139,34 @@
 
       ; the user didn't click on a node  
       (do
-        ; clear any pending link alteration
-        (swap! the-state dissoc :linking-from)
-        (case (mouse-button)
-          ; create a new sink node at the point of the mouse click
-          :left (let [id (fresh-id! "snk")]
-                  (swap! the-state
-                         add-node
-                         {:id id
-                          :pos [(mouse-x) (mouse-y)]
-                          :kind :sink}
-                         [[:src0 id]]))
-          ; create a new source node
-          :right (let [id (fresh-id! "src")]
-                   (swap! the-state
-                          (fn [st]
-                            (add-node
-                              st
-                              {:id id
-                               :pos [(mouse-x) (mouse-y)]
-                               :kind :source
-                               :created @tick*}
-                              ; for now just hook it up to all sinks
-                              (for [sink (filter #(= (:kind %) :sink)
-                                                 (vals (get-in st [:graph :nodes])))]
-                                [id (:id sink)]))))))))) 
+        (if (:linking-from st) 
+          ; clear any pending link alteration
+          (swap! the-state dissoc :linking-from)
+
+          ; no pending link alteration, so make a new node
+          (case (mouse-button)
+            ; create a new sink node at the point of the mouse click
+            :left (let [id (fresh-id! "snk")]
+                    (swap! the-state
+                           add-node
+                           {:id id
+                            :pos [(mouse-x) (mouse-y)]
+                            :kind :sink}
+                           [[:src0 id]]))
+            ; create a new source node
+            :right (let [id (fresh-id! "src")]
+                     (swap! the-state
+                            (fn [st]
+                              (add-node
+                                st
+                                {:id id
+                                 :pos [(mouse-x) (mouse-y)]
+                                 :kind :source
+                                 :created @tick*}
+                                ; for now just hook it up to all sinks
+                                (for [sink (filter #(= (:kind %) :sink)
+                                                   (vals (get-in st [:graph :nodes])))]
+                                  [id (:id sink)])))))))))) 
   ; the foregoing is the longest clojure function i've ever written
   ; need to break that monster up
 
@@ -183,6 +185,7 @@
   )
 
 (defn key-pressed []
+  (println "key-pressed. keyword:" (key-as-keyword))
   (case (raw-key) 
     \r (reset! the-state initial-state)
 
