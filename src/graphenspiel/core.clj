@@ -1,5 +1,7 @@
 (ns graphenspiel.core
-  (:use [graphenspiel.math :only [distance]])
+  (:use [graphenspiel.math :only [distance]]
+        [graphenspiel.sound :only [play-simple-sound]]
+        )
   (:import java.lang.Thread))
 
 ; why the crap is this not in clojure.core?
@@ -248,6 +250,8 @@
 (defmethod react-arrival [:source :sink]
   [st pulse]
   #_(println "arrival!")
+  (when-not (get-in st [:config :muted]) 
+    (play-simple-sound))
   (let [snk-id (-> pulse :edge second)]
     (assoc-in st [:graph :nodes snk-id :reacting]
               {:start @tick*, :dur   10    }))) 
