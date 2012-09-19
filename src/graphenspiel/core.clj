@@ -335,17 +335,21 @@
     (swap! states conj @the-state)
     )
 
-  (def sim-thread (future (sim-loop)))
-  (do  
-    (future-cancel sim-thread)
-    (reset! the-state initial-state))
 
   (swap! the-state assoc-in [:graph :nodes :reacting] {:start @tick*, :dur 10})
   (swap! quit* not)
 
   (do
     (require '[graphenspiel.drawing :as drawing])
-    (drawing/start))
+    (drawing/start)
+
+    (def sim-thread (future (sim-loop)))) 
+
+  (do  
+    (future-cancel sim-thread)
+    (reset! the-state initial-state))
+
+
   )
 
 

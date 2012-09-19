@@ -18,6 +18,21 @@
 
 (defn mouse-pos [] [(mouse-x) (mouse-y)])
 
+(defn over-node?
+  [node mpos]
+  (<= (distance (:pos node) mpos) 
+      node-radius))
+
+(defn hovered-node-ids
+  "node ids of any nodes below mpos"
+  [st mpos]
+  (->> (get-in st [:graph :nodes])
+    (map (fn [[id node]]
+           (if (over-node? node mpos)
+             id
+             nil)))
+    (remove nil?)))
+
 (defn- draw-edges
   [state]
   (stroke-weight 5)
@@ -26,6 +41,7 @@
     (->> (edge-nodes state edge)
       (map :pos)
       (apply line))))
+
 
 (defn draw-node*
   "helper to draw a node of a given color.  if not specified, 
@@ -70,6 +86,13 @@
                 [x y]     (linterp (:pos org) (:pos dst) (:pos pulse)) ]]
     (ellipse x y pulse-radius pulse-radius)))
 
+(defn- draw-potential-edge
+  [st]
+  (when-let [from-nid (:linking-from st)]
+    (stroke 255 255 255 100)
+    (apply line 
+           (concat (get-in st [:graph :nodes from-nid :pos])
+                   (mouse-pos)))))
 
 (defn- draw []
   (let [state @the-state]
@@ -77,6 +100,7 @@
     (draw-edges state)
     (draw-nodes state)
     (draw-pulses state)
+    (draw-potential-edge state)
     ))
 
 (defn- setup []
@@ -167,21 +191,6 @@
          (applet-exit (current-applet)))
 
     nil))
-
-(defn over-node?
-  [node mpos]
-  (<= (distance (:pos node) mpos) 
-      node-radius))
-
-(defn hovered-node-ids
-  "node ids of any nodes below mpos"
-  [st mpos]
-  (->> (get-in st [:graph :nodes])
-    (map (fn [[id node]]
-           (if (over-node? node mpos)
-             id
-             nil)))
-    (remove nil?)))
 
 (comment
   (def st initial-state)
