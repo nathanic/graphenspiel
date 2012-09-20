@@ -33,7 +33,8 @@
 ; turrible: extract the numeric part of :snkN and pick a midi note from it
 (defn hacky-extract-number
   [node-id]  
-  (Integer. (.substring (str :snk0) 4))) 
+  (Integer. (.substring (str node-id) 4))) 
+  ; return new Integer(nodeId.toString().substring(4))
 
 (defn play-simple-sound
   [node]
@@ -42,7 +43,10 @@
   (let [freq ; (rand-nth (map midi->hz (range 40 70)))
              (midi->hz (+ 60 (* 5 (hacky-extract-number (:id node)))))
         ] 
-    (harpsichord freq))
+    ;(harpsichord freq)
+    (sin-wave freq)
+    ;(poly-ding (hz->midi freq))
+    )
   )
 
 (comment
