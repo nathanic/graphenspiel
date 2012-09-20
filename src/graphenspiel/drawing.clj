@@ -187,6 +187,8 @@
   (case (raw-key) 
     \r (reset! the-state initial-state)
 
+    \m (swap! the-state update-in [:config :muted] (fnil not false))
+
     \q (do    
          (reset! quit* true)
          (applet-exit (current-applet)))
