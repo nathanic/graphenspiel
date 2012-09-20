@@ -244,25 +244,28 @@
 
 (defmulti react-arrival 
   (fn [st pulse] 
-    (map :kind (edge-nodes st (:edge pulse)))))
+    ;(map :kind (edge-nodes st (:edge pulse)))
+    (let [[src snk] (edge-nodes st (:edge pulse))]
+      [(:kind src) (:kind snk)])))
 
 ; we'll eventually have more node types
 (defmethod react-arrival [:source :sink]
   [st pulse]
   #_(println "arrival!")
-  (when-not (get-in st [:config :muted]) 
-    (play-simple-sound))
-  (let [snk-id (-> pulse :edge second)]
+  (let [snk-id (-> pulse :edge second)
+        snk    (get-in st [:graph :nodes snk-id])]
+    (when-not (get-in st [:config :muted]) 
+      (play-simple-sound snk))
     (assoc-in st [:graph :nodes snk-id :reacting]
               {:start @tick*, :dur   10    }))) 
 
-; need an interesting structure here
-; a reduce but also a map...
-; or is it just a reduce...
 (defn react-arrivals 
   [st] 
   (let [arrivals (filter (p arrived? st) (:pulses st))]
-    (reduce react-arrival st arrivals)))
+    (reduce (fn [st p] 
+              ; (println "reacting to arrival of pulse:" p)
+              (react-arrival st p)) 
+            st arrivals)))
 
 (comment
   (def st @the-state)
@@ -343,11 +346,25 @@
   (swap! the-state assoc-in [:graph :nodes :reacting] {:start @tick*, :dur 10})
   (swap! quit* not)
 
+  ; i was getting a problem because i accidentally linked a src back to itself
+  ; and i didn't have a method for react-arrival [:source :source]
+  ; let's surgically remove that
+  (swap! the-state update-in [:graph :edges] 
+         (p remove (fn [[a b]] (= a b))))
+
+  (def backup-st @the-state)
+  (spit "graphenspiel-state-dump.clj" (with-out-str (pprint @the-state)))
+
   (do
     (require '[graphenspiel.drawing :as drawing])
     (drawing/start)
 
-    (def sim-thread (future (sim-loop)))) 
+    (def sim-thread 
+      (future (try
+                (sim-loop)
+                (catch Throwable e
+                  (println "Exception in simulation thread:" e)
+                  (.printStackTrace e)))))) 
 
   (do  
     (future-cancel sim-thread)

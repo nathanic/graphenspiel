@@ -29,11 +29,19 @@
       (pluck (* (white-noise) (env-gen (perc 0.001 5) :action FREE))
              1 1 (/ 1 freq) (* duration 2) 0.25))))
 
+
+; turrible: extract the numeric part of :snkN and pick a midi note from it
+(defn hacky-extract-number
+  [node-id]  
+  (Integer. (.substring (str :snk0) 4))) 
+
 (defn play-simple-sound
-  []
+  [node]
   ; (ding)
   ; (poly-ding)
-  #_(let [freq (rand-nth (map midi->hz (range 40 70)))] 
+  (let [freq ; (rand-nth (map midi->hz (range 40 70)))
+             (midi->hz (+ 60 (* 5 (hacky-extract-number (:id node)))))
+        ] 
     (harpsichord freq))
   )
 
