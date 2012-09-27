@@ -36,15 +36,24 @@
   (Integer. (.substring (str node-id) 4))) 
   ; return new Integer(nodeId.toString().substring(4))
 
+; jathom5 suggested choosing notes from the following scale: 
+; [C D Eb F G Ab Bb C], 
+; and suggested weighting probabilities more heavily on [C Eb G Bb C]
+(def jathom5-notes [:C4 :D4 :Eb4 :G4 :Ab4 :Bb4 :C5])
+
 (defn play-simple-sound
   [node]
   ; (ding)
   ; (poly-ding)
   (let [freq ; (rand-nth (map midi->hz (range 40 70)))
-             (midi->hz (+ 60 (* 5 (hacky-extract-number (:id node)))))
+             (midi->hz (+ 60 (* 3 (hacky-extract-number (:id node)))))
         ] 
     ;(harpsichord freq)
-    (sin-wave freq)
+    ;(sin-wave :freq freq)
+    (sin-wave (-> jathom5-notes
+                rand-nth
+                note
+                midi->hz)) 
     ;(poly-ding (hz->midi freq))
     )
   )
